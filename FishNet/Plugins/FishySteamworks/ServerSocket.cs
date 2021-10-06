@@ -279,7 +279,7 @@ namespace FishySteamworks.Server
                 {
                     for (int i = 0; i < messageCount; i++)
                     {
-                        (ArraySegment<byte> segment, byte channel) = base.GetMessage(base.MessagePointers[i], InboundBuffer);
+                        base.GetMessage(base.MessagePointers[i], InboundBuffer, out ArraySegment<byte> segment, out byte channel);
                         base.Transport.HandleServerReceivedDataArgs(new ServerReceivedDataArgs(segment, (Channel)channel, connectionId));
                     }
                 }

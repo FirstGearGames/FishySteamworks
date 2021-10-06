@@ -164,7 +164,7 @@ namespace FishySteamworks
         /// <param name="ptr"></param>
         /// <param name="buffer"></param>
         /// <returns></returns>
-        protected (ArraySegment<byte>, byte) GetMessage(IntPtr ptr, byte[] buffer)
+        protected void GetMessage(IntPtr ptr, byte[] buffer, out ArraySegment<byte> segment, out byte channel)
         {
             SteamNetworkingMessage_t data = Marshal.PtrToStructure<SteamNetworkingMessage_t>(ptr);
 
@@ -172,11 +172,9 @@ namespace FishySteamworks
             Marshal.Copy(data.m_pData, buffer, 0, packetLength);
             data.Release();
             //Channel will be at the end of the packet.
-            byte channel = buffer[packetLength - 1];
+            channel = buffer[packetLength - 1];
             //Set segment to length - 1 to exclude channel.
-            ArraySegment<byte> segment = new ArraySegment<byte>(buffer, 0, packetLength - 1);
-
-            return (segment, channel);
+            segment = new ArraySegment<byte>(buffer, 0, packetLength - 1);
         }
     }
 

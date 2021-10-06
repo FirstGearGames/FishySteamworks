@@ -1,0 +1,13 @@
+1.3.0
+	- Moved to it's own git. https://github.com/FirstGearGames/FishySteamworks/
+
+1.2.0
+	- Support for Steamworks 15.0.1 changes.
+
+1.1.0
+	- Made changes to function with Heathen Engineering - Steamworks v2: Foundation, Steamworks v2: Complete
+		https://assetstore.unity.com/packages/tools/integration/steamworks-v2-foundation-186949
+		https://assetstore.unity.com/packages/tools/integration/steamworks-v2-complete-190316
+
+1.0.0
+	- Initial release.

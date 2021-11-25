@@ -63,7 +63,7 @@ namespace FishySteamworks.Client
                     StopConnection();
 
                 Thread.Sleep(50);
-            } while (base.GetConnectionState() == LocalConnectionStates.Starting);
+            } while (base.GetLocalConnectionState() == LocalConnectionStates.Starting);
 
             //If here then the thread no longer needs to run. Can abort itself.
             _timeoutThread.Abort();
@@ -78,33 +78,45 @@ namespace FishySteamworks.Client
         /// <param name="pollTime"></param>
         internal bool StartConnection(string address, ushort port, bool peerToPeer)
         {
-            //If address is required then make sure it can be parsed.
-            byte[] ip = (!peerToPeer) ? base.GetIPBytes(address) : null;
-            if (!peerToPeer && ip == null)
+            try
+            {
+                //If address is required then make sure it can be parsed.
+                byte[] ip = (!peerToPeer) ? base.GetIPBytes(address) : null;
+                if (!peerToPeer && ip == null)
+                {
+                    base.SetLocalConnectionState(LocalConnectionStates.Stopped, false);
+                    return false;
+                }
+
+                base.SetLocalConnectionState(LocalConnectionStates.Starting, false);
+
+                _connectTimeout = Time.unscaledTime + CONNECT_TIMEOUT_DURATION;
+                _timeoutThread = new Thread(CheckTimeout);
+                _timeoutThread.Start();
+                _hostSteamID = new CSteamID(UInt64.Parse(address));
+
+                SteamNetworkingIdentity smi = new SteamNetworkingIdentity();
+                smi.SetSteamID(_hostSteamID);
+                SteamNetworkingConfigValue_t[] options = new SteamNetworkingConfigValue_t[] { };
+                if (base.PeerToPeer)
+                {
+                    _socket = SteamNetworkingSockets.ConnectP2P(ref smi, 0, options.Length, options);
+                }
+                else
+                {
+                    SteamNetworkingIPAddr addr = new SteamNetworkingIPAddr();
+                    addr.Clear();
+                    addr.SetIPv6(ip, port);
+                    _socket = SteamNetworkingSockets.ConnectByIPAddress(ref addr, 0, options);
+                }
+            }
+            catch
+            {
+                base.SetLocalConnectionState(LocalConnectionStates.Stopped, false);
                 return false;
-
-            SetConnectionState(LocalConnectionStates.Starting);
-
-            _connectTimeout = Time.unscaledTime + CONNECT_TIMEOUT_DURATION;
-            _timeoutThread = new Thread(CheckTimeout);
-            _timeoutThread.Start();
-            _hostSteamID = new CSteamID(UInt64.Parse(address));
-
-            SteamNetworkingIdentity smi = new SteamNetworkingIdentity();
-            smi.SetSteamID(_hostSteamID);
-            SteamNetworkingConfigValue_t[] options = new SteamNetworkingConfigValue_t[] { };
-            if (base.PeerToPeer)
-            {
-                _socket = SteamNetworkingSockets.ConnectP2P(ref smi, 0, options.Length, options);
-            }
-            else
-            {
-                SteamNetworkingIPAddr addr = new SteamNetworkingIPAddr();
-                addr.Clear();
-                addr.SetIPv6(ip, port);
-                _socket = SteamNetworkingSockets.ConnectByIPAddress(ref addr, 0, options);
             }
 
+            base.SetLocalConnectionState(LocalConnectionStates.Started, false);
             return true;
         }
 
@@ -116,7 +128,7 @@ namespace FishySteamworks.Client
         {
             if (args.m_info.m_eState == ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_Connected)
             {
-                SetConnectionState(LocalConnectionStates.Started);
+                base.SetLocalConnectionState(LocalConnectionStates.Started, false);
             }
             else if (args.m_info.m_eState == ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_ClosedByPeer || args.m_info.m_eState == ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_ProblemDetectedLocally)
             {
@@ -136,10 +148,10 @@ namespace FishySteamworks.Client
         /// </summary>
         internal bool StopConnection()
         {
-            if (base.GetConnectionState() == LocalConnectionStates.Stopped || base.GetConnectionState() == LocalConnectionStates.Stopping)
+            if (base.GetLocalConnectionState() == LocalConnectionStates.Stopped || base.GetLocalConnectionState() == LocalConnectionStates.Stopping)
                 return false;
 
-            SetConnectionState(LocalConnectionStates.Stopping);
+            base.SetLocalConnectionState(LocalConnectionStates.Stopping, false);
             //Manually abort thread to close it down quicker.
             if (_timeoutThread.IsAlive)
                 _timeoutThread.Abort();
@@ -153,7 +165,7 @@ namespace FishySteamworks.Client
 
             SteamNetworkingSockets.CloseConnection(_socket, 0, string.Empty, false);
             _socket.m_HSteamNetConnection = 0;
-            SetConnectionState(LocalConnectionStates.Stopped);
+            base.SetLocalConnectionState(LocalConnectionStates.Stopped, false);
 
             return true;
         }
@@ -163,7 +175,7 @@ namespace FishySteamworks.Client
         /// </summary>
         internal void IterateIncoming()
         {
-            if (base.GetConnectionState() != LocalConnectionStates.Started)
+            if (base.GetLocalConnectionState() != LocalConnectionStates.Started)
                 return;
 
             int messageCount = SteamNetworkingSockets.ReceiveMessagesOnConnection(_socket, base.MessagePointers, MAX_MESSAGES);
@@ -184,7 +196,7 @@ namespace FishySteamworks.Client
         /// <param name="segment"></param>
         internal void SendToServer(byte channelId, ArraySegment<byte> segment)
         {
-            if (base.GetConnectionState() != LocalConnectionStates.Started)
+            if (base.GetLocalConnectionState() != LocalConnectionStates.Started)
                 return;
 
             EResult res = base.Send(_socket, segment, channelId);
@@ -207,7 +219,7 @@ namespace FishySteamworks.Client
         /// </summary>
         internal void IterateOutgoing()
         {
-            if (base.GetConnectionState() != LocalConnectionStates.Started)
+            if (base.GetLocalConnectionState() != LocalConnectionStates.Started)
                 return;
 
             SteamNetworkingSockets.FlushMessagesOnConnection(_socket);

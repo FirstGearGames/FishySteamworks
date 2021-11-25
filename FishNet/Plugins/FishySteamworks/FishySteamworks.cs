@@ -201,9 +201,9 @@ namespace FishySteamworks
         public override LocalConnectionStates GetConnectionState(bool server)
         {
             if (server)
-                return _server.GetConnectionState();
+                return _server.GetLocalConnectionState();
             else
-                return _client.GetConnectionState();
+                return _client.GetLocalConnectionState();
         }
         /// <summary>
         /// Gets the current ConnectionState of a remote client on the server.
@@ -424,13 +424,13 @@ namespace FishySteamworks
                 Debug.LogError("Server network access is not available.");
                 return false;
             }
-            if (_client.GetConnectionState() != LocalConnectionStates.Stopped)
+            if (_client.GetLocalConnectionState() != LocalConnectionStates.Stopped)
             {
                 Debug.LogError("Server cannot run while client is running.");
                 return false;
             }
             _server.ResetInvalidSocket();
-            if (_server.GetConnectionState() != LocalConnectionStates.Stopped)
+            if (_server.GetLocalConnectionState() != LocalConnectionStates.Stopped)
             {
                 Debug.LogError("Server is already running.");
                 return false;
@@ -460,12 +460,12 @@ namespace FishySteamworks
                 Debug.LogError("Client network access is not available.");
                 return false;
             }
-            if (_server.GetConnectionState() != LocalConnectionStates.Stopped)
+            if (_server.GetLocalConnectionState() != LocalConnectionStates.Stopped)
             {
                 Debug.LogError("Client cannot run while server is running.");
                 return false;
             }
-            if (_client.GetConnectionState() != LocalConnectionStates.Stopped)
+            if (_client.GetLocalConnectionState() != LocalConnectionStates.Stopped)
             {
                 Debug.LogError("Client is already running.");
                 return false;

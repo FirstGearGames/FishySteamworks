@@ -23,7 +23,7 @@ namespace FishySteamworks
         /// Returns the current ConnectionState.
         /// </summary>
         /// <returns></returns>
-        internal LocalConnectionStates GetConnectionState()
+        internal LocalConnectionStates GetLocalConnectionState()
         {
             return _connectionState;
         }
@@ -31,16 +31,18 @@ namespace FishySteamworks
         /// Sets a new connection state.
         /// </summary>
         /// <param name="connectionState"></param>
-        protected void SetConnectionState(LocalConnectionStates connectionState)
+        protected void SetLocalConnectionState(LocalConnectionStates connectionState, bool server)
         {
             //If state hasn't changed.
             if (connectionState == _connectionState)
                 return;
 
             _connectionState = connectionState;
-            Transport.HandleClientConnectionState(
-                new ClientConnectionStateArgs(connectionState)
-                );
+
+            if (server)
+                Transport.HandleServerConnectionState(new ServerConnectionStateArgs(connectionState));
+            else
+                Transport.HandleClientConnectionState(new ClientConnectionStateArgs(connectionState));
         }
         #endregion
 

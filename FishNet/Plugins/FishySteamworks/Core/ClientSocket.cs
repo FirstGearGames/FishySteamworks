@@ -56,14 +56,17 @@ namespace FishySteamworks.Client
         /// </summary>
         private void CheckTimeout()
         {
+            System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+            sw.Start();
             do
             {
                 //Timeout occurred.
-                if (Time.unscaledTime > _connectTimeout)
+                if ((sw.ElapsedMilliseconds / 1000) > _connectTimeout)
                     StopConnection();
 
                 Thread.Sleep(50);
             } while (base.GetLocalConnectionState() == LocalConnectionStates.Starting);
+            sw.Stop();
 
             //If here then the thread no longer needs to run. Can abort itself.
             _timeoutThread.Abort();
@@ -80,6 +83,7 @@ namespace FishySteamworks.Client
         {
             try
             {
+                base.PeerToPeer = peerToPeer;
                 //If address is required then make sure it can be parsed.
                 byte[] ip = (!peerToPeer) ? base.GetIPBytes(address) : null;
                 if (!peerToPeer && ip == null)
@@ -89,7 +93,6 @@ namespace FishySteamworks.Client
                 }
 
                 base.SetLocalConnectionState(LocalConnectionStates.Starting, false);
-
                 _connectTimeout = Time.unscaledTime + CONNECT_TIMEOUT_DURATION;
                 _timeoutThread = new Thread(CheckTimeout);
                 _timeoutThread.Start();
@@ -153,7 +156,7 @@ namespace FishySteamworks.Client
 
             base.SetLocalConnectionState(LocalConnectionStates.Stopping, false);
             //Manually abort thread to close it down quicker.
-            if (_timeoutThread.IsAlive)
+            if (_timeoutThread != null && _timeoutThread.IsAlive)
                 _timeoutThread.Abort();
 
             //Reset callback.

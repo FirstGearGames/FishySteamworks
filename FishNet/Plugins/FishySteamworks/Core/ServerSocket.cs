@@ -52,11 +52,11 @@ namespace FishySteamworks.Server
         /// <summary>
         /// Packets received from local client.
         /// </summary>
-        private ConcurrentQueue<LocalPacket> _localIncoming = new ConcurrentQueue<LocalPacket>();
+        private ConcurrentQueue<LocalPacket> _clientHostIncoming = new ConcurrentQueue<LocalPacket>();
         /// <summary>
-        /// Contains state of the local client. True is started, false is stopped.
+        /// Contains state of the client host. True is started, false is stopped.
         /// </summary>
-        private bool _localClientStarted = false;
+        private bool _clientHostStarted = false;
         /// <summary>
         /// Called when a remote connection state changes.
         /// </summary>
@@ -175,7 +175,7 @@ namespace FishySteamworks.Server
         /// <param name="connectionId">ConnectionId of the client to disconnect.</param>
         internal bool StopConnection(int connectionId)
         {
-            if (connectionId == FishySteamworks.LOCAL_CLIENT_ID)
+            if (connectionId == FishySteamworks.CLIENT_HOST_ID)
             {
                 if (_clientHost != null)
                 {
@@ -313,11 +313,11 @@ namespace FishySteamworks.Server
             if (base.GetLocalConnectionState() == LocalConnectionStates.Stopped || base.GetLocalConnectionState() == LocalConnectionStates.Stopping)
                 return;
 
-            //Iterate local client first.
-            while (_localIncoming.TryDequeue(out LocalPacket packet))
+            //Iterate local client packets first.
+            while (_clientHostIncoming.TryDequeue(out LocalPacket packet))
             {
                 ArraySegment<byte> segment = new ArraySegment<byte>(packet.Data, 0, packet.Length);
-                base.Transport.HandleServerReceivedDataArgs(new ServerReceivedDataArgs(segment, (Channel)packet.Channel, FishySteamworks.LOCAL_CLIENT_ID));
+                base.Transport.HandleServerReceivedDataArgs(new ServerReceivedDataArgs(segment, (Channel)packet.Channel, FishySteamworks.CLIENT_HOST_ID));
             }
 
             foreach (KeyValuePair<HSteamNetConnection, int> item in _steamConnections.First)
@@ -353,8 +353,8 @@ namespace FishySteamworks.Server
             if (base.GetLocalConnectionState() != LocalConnectionStates.Started)
                 return;
 
-            //Check if to local client first, it's an early exit.
-            if (connectionId == FishySteamworks.LOCAL_CLIENT_ID)
+            //Check if sending local client first, send and exit if so.
+            if (connectionId == FishySteamworks.CLIENT_HOST_ID)
             {
                 if (_clientHost != null)
                 {
@@ -411,7 +411,7 @@ namespace FishySteamworks.Server
         /// </summary>
         internal void SetMaximumClients(int value)
         {
-            _maximumClients = Math.Min(value, FishySteamworks.LOCAL_CLIENT_ID - 1);
+            _maximumClients = Math.Min(value, FishySteamworks.CLIENT_HOST_ID - 1);
         }
         /// <summary>
         /// Returns maximum number of allowed clients.
@@ -422,7 +422,7 @@ namespace FishySteamworks.Server
             return _maximumClients;
         }
 
-        #region LocalClient (client host)
+        #region ClientHost (local client).
         /// <summary>
         /// Sets ClientHost value.
         /// </summary>
@@ -434,18 +434,18 @@ namespace FishySteamworks.Server
         /// <summary>
         /// Called when the local client stops.
         /// </summary>
-        internal void OnLocalClientState(bool started)
+        internal void OnClientHostState(bool started)
         {
-            _localClientStarted = started;
+            _clientHostStarted = started;
             //If not started flush incoming from local client.
             if (!started)
             {
-                while (_localIncoming.TryDequeue(out _)) ;
-                base.Transport.HandleRemoteConnectionState(new RemoteConnectionStateArgs(RemoteConnectionStates.Stopped, FishySteamworks.LOCAL_CLIENT_ID));
+                while (_clientHostIncoming.TryDequeue(out _)) ;
+                base.Transport.HandleRemoteConnectionState(new RemoteConnectionStateArgs(RemoteConnectionStates.Stopped, FishySteamworks.CLIENT_HOST_ID));
             }
             else
             {
-                base.Transport.HandleRemoteConnectionState(new RemoteConnectionStateArgs(RemoteConnectionStates.Started, FishySteamworks.LOCAL_CLIENT_ID));
+                base.Transport.HandleRemoteConnectionState(new RemoteConnectionStateArgs(RemoteConnectionStates.Started, FishySteamworks.CLIENT_HOST_ID));
             }
 
 
@@ -453,12 +453,12 @@ namespace FishySteamworks.Server
         /// <summary>
         /// Queues a received packet from the local client.
         /// </summary>
-        internal void ReceivedFromLocalClient(LocalPacket packet)
+        internal void ReceivedFromClientHost(LocalPacket packet)
         {
-            if (!_localClientStarted)
+            if (!_clientHostStarted)
                 return;
 
-            _localIncoming.Enqueue(packet);
+            _clientHostIncoming.Enqueue(packet);
         }
         #endregion
     }

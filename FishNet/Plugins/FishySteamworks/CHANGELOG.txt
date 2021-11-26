@@ -1,4 +1,4 @@
-1,3,2
+1.3.2
 	- Fixed HUD displaying incorrect states when connecting server.
 
 1.3.1

@@ -60,17 +60,17 @@ namespace FishySteamworks
 
         #region Private.
         /// <summary>
-        /// Transport channels to use.
+        /// MTUs for each channel.
         /// </summary>
-        private ChannelData[] _channels;
+        private int[] _mtus;
         /// <summary>
-        /// Client for the transport.
+        /// Client when acting as client only.
         /// </summary>
         private Client.ClientSocket _client = new Client.ClientSocket();
         /// <summary>
-        /// Local client host for the trnasport.
+        /// Client when acting as host.
         /// </summary>
-        private Client.ClientHostSocket _localCLient = new Client.ClientHostSocket();
+        private Client.ClientHostSocket _clientHost = new Client.ClientHostSocket();
         /// <summary>
         /// Server for the transport.
         /// </summary>
@@ -79,9 +79,9 @@ namespace FishySteamworks
 
         #region Const.
         /// <summary>
-        /// Id to use for local client when acting as host.
+        /// Id to use for client when acting as host.
         /// </summary>
-        internal const int LOCAL_CLIENT_ID = short.MaxValue;
+        internal const int CLIENT_HOST_ID = short.MaxValue;
         #endregion
 
         public override void Initialize(NetworkManager networkManager)
@@ -91,7 +91,7 @@ namespace FishySteamworks
             CreateChannelData();
             WriteSteamAppId();
             _client.Initialize(this);
-            _localCLient.Initialize(this);
+            _clientHost.Initialize(this);
             _server.Initialize(this);
         }
 
@@ -100,16 +100,21 @@ namespace FishySteamworks
             Shutdown();
         }
 
+        private void Update()
+        {
+            _clientHost.CheckSetStarted();
+        }
+
         #region Setup.
         /// <summary>
         /// Creates ChannelData for the transport.
         /// </summary>
         private void CreateChannelData()
         {
-            _channels = new ChannelData[2]
+            _mtus = new int[2]
             {
-                new ChannelData(Channel.Reliable, 1048576),
-                new ChannelData(Channel.Unreliable, 1200)
+                1048576,
+                1200
             };
         }
         /// <summary>
@@ -258,7 +263,7 @@ namespace FishySteamworks
             else
             { 
                 _client.IterateIncoming();
-                _localCLient.IterateIncoming();
+                _clientHost.IterateIncoming();
             }
         }
 
@@ -311,7 +316,7 @@ namespace FishySteamworks
         public override void SendToServer(byte channelId, ArraySegment<byte> segment)
         {
             _client.SendToServer(channelId, segment);
-            _localCLient.SendToServer(channelId, segment);
+            _clientHost.SendToServer(channelId, segment);
         }
         /// <summary>
         /// Sends data to a client.
@@ -438,11 +443,6 @@ namespace FishySteamworks
                 Debug.LogError("Server network access is not available.");
                 return false;
             }
-            if (_client.GetLocalConnectionState() != LocalConnectionStates.Stopped)
-            {
-                Debug.LogError("Server cannot run while client is running.");
-                return false;
-            }
             _server.ResetInvalidSocket();
             if (_server.GetLocalConnectionState() != LocalConnectionStates.Stopped)
             {
@@ -450,7 +450,18 @@ namespace FishySteamworks
                 return false;
             }
 
-            return _server.StartConnection(_serverBindAddress, _port, _maximumClients, _peerToPeer);
+            bool clientRunning = (_client.GetLocalConnectionState() != LocalConnectionStates.Stopped);
+            /* If remote _client is running then stop it
+             * and start the client host variant. */
+            if (clientRunning)
+                _client.StopConnection();                
+
+            bool result = _server.StartConnection(_serverBindAddress, _port, _maximumClients, _peerToPeer);
+            //If need to restart client.
+            if (result && clientRunning)
+                StartConnection(false);
+
+            return result;
         }
 
         /// <summary>
@@ -471,20 +482,19 @@ namespace FishySteamworks
             //If not acting as a host.
             if (_server.GetLocalConnectionState() == LocalConnectionStates.Stopped)
             {
+                if (_client.GetLocalConnectionState() != LocalConnectionStates.Stopped)
+                {
+                    Debug.LogError("Client is already running.");
+                    return false;
+                }
+                //Stop client host if running.
+                if (_clientHost.GetLocalConnectionState() != LocalConnectionStates.Stopped)
+                    _clientHost.StopConnection();
+                //Initialize.
                 InitializeRelayNetworkAccess();
                 if (!IsNetworkAccessAvailable())
                 {
                     Debug.LogError("Client network access is not available.");
-                    return false;
-                }
-                if (_server.GetLocalConnectionState() != LocalConnectionStates.Stopped)
-                {
-                    Debug.LogError("Client cannot run while server is running.");
-                    return false;
-                }
-                if (_client.GetLocalConnectionState() != LocalConnectionStates.Stopped)
-                {
-                    Debug.LogError("Client is already running.");
                     return false;
                 }
 
@@ -494,7 +504,7 @@ namespace FishySteamworks
             //Acting as host.
             else
             {
-                _localCLient.StartConnection(_server);
+                _clientHost.StartConnection(_server);
             }
 
             return true;
@@ -507,7 +517,7 @@ namespace FishySteamworks
         {
             bool result = false;
             result |= _client.StopConnection();
-            result |= _localCLient.StopConnection();
+            result |= _clientHost.StopConnection();
             return result;
         }
 
@@ -530,7 +540,7 @@ namespace FishySteamworks
         /// <returns></returns>
         public override byte GetChannelCount()
         {
-            return (byte)_channels.Length;
+            return (byte)_mtus.Length;
         }
         /// <summary>
         /// Returns which channel to use by default for reliable.
@@ -554,13 +564,13 @@ namespace FishySteamworks
         /// <returns></returns>
         public override int GetMTU(byte channel)
         {
-            if (channel >= _channels.Length)
+            if (channel >= _mtus.Length)
             {
                 Debug.LogError($"Channel {channel} is out of bounds.");
                 return 0;
             }
 
-            return _channels[channel].MaximumTransmissionUnit;
+            return _mtus[channel];
         }
         #endregion
 

@@ -68,6 +68,10 @@ namespace FishySteamworks
         /// </summary>
         private Client.ClientSocket _client = new Client.ClientSocket();
         /// <summary>
+        /// Local client host for the trnasport.
+        /// </summary>
+        private Client.ClientHostSocket _localCLient = new Client.ClientHostSocket();
+        /// <summary>
         /// Server for the transport.
         /// </summary>
         private Server.ServerSocket _server = new Server.ServerSocket();
@@ -75,9 +79,9 @@ namespace FishySteamworks
 
         #region Const.
         /// <summary>
-        /// How often to try and get SteamId.
+        /// Id to use for local client when acting as host.
         /// </summary>
-        private const float GET_ID_INTERVAL = 1f;
+        internal const int LOCAL_CLIENT_ID = short.MaxValue;
         #endregion
 
         public override void Initialize(NetworkManager networkManager)
@@ -87,6 +91,7 @@ namespace FishySteamworks
             CreateChannelData();
             WriteSteamAppId();
             _client.Initialize(this);
+            _localCLient.Initialize(this);
             _server.Initialize(this);
         }
 
@@ -247,9 +252,14 @@ namespace FishySteamworks
         public override void IterateIncoming(bool server)
         {
             if (server)
+            { 
                 _server.IterateIncoming();
+            }
             else
+            { 
                 _client.IterateIncoming();
+                _localCLient.IterateIncoming();
+            }
         }
 
         /// <summary>
@@ -301,6 +311,7 @@ namespace FishySteamworks
         public override void SendToServer(byte channelId, ArraySegment<byte> segment)
         {
             _client.SendToServer(channelId, segment);
+            _localCLient.SendToServer(channelId, segment);
         }
         /// <summary>
         /// Sends data to a client.
@@ -310,6 +321,9 @@ namespace FishySteamworks
         /// <param name="connectionId"></param>
         public override void SendToClient(byte channelId, ArraySegment<byte> segment, int connectionId)
         {
+            //uint tick = BitConverter.ToUInt32(segment.Array, 0);
+            //ushort val = BitConverter.ToUInt16(segment.Array, 4);
+            //Debug.Log(tick + ",  " + val);
             _server.SendToClient(channelId, segment, connectionId);
         }
         #endregion
@@ -454,25 +468,35 @@ namespace FishySteamworks
         /// <returns>True if there were no blocks. A true response does not promise a socket will or has connected.</returns>
         private bool StartClient(string address)
         {
-            InitializeRelayNetworkAccess();
-            if (!IsNetworkAccessAvailable())
+            //If not acting as a host.
+            if (_server.GetLocalConnectionState() == LocalConnectionStates.Stopped)
             {
-                Debug.LogError("Client network access is not available.");
-                return false;
+                InitializeRelayNetworkAccess();
+                if (!IsNetworkAccessAvailable())
+                {
+                    Debug.LogError("Client network access is not available.");
+                    return false;
+                }
+                if (_server.GetLocalConnectionState() != LocalConnectionStates.Stopped)
+                {
+                    Debug.LogError("Client cannot run while server is running.");
+                    return false;
+                }
+                if (_client.GetLocalConnectionState() != LocalConnectionStates.Stopped)
+                {
+                    Debug.LogError("Client is already running.");
+                    return false;
+                }
+
+                //SetUserSteamID();
+                _client.StartConnection(address, _port, _peerToPeer);
             }
-            if (_server.GetLocalConnectionState() != LocalConnectionStates.Stopped)
+            //Acting as host.
+            else
             {
-                Debug.LogError("Client cannot run while server is running.");
-                return false;
-            }
-            if (_client.GetLocalConnectionState() != LocalConnectionStates.Stopped)
-            {
-                Debug.LogError("Client is already running.");
-                return false;
+                _localCLient.StartConnection(_server);
             }
 
-            //SetUserSteamID();
-            _client.StartConnection(address, _port, _peerToPeer);
             return true;
         }
 
@@ -481,7 +505,10 @@ namespace FishySteamworks
         /// </summary>
         private bool StopClient()
         {
-            return _client.StopConnection();
+            bool result = false;
+            result |= _client.StopConnection();
+            result |= _localCLient.StopConnection();
+            return result;
         }
 
         /// <summary>

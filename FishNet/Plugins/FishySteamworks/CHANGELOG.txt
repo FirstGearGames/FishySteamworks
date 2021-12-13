@@ -1,3 +1,8 @@
+1.4.1
+	- Fixed server incorrectly rejecting connections due to maximum clients met.
+	- Fixed client giving false connection started response.
+	- Added support for Steamworks.Net 20.0.0.
+
 1.4.0
 	- Added client-host support.
 	- Organized folder structure.

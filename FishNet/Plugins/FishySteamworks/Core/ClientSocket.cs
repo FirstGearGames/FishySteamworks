@@ -1,5 +1,4 @@
 #if !FISHYSTEAMWORKS
-using FishNet.Managing;
 using FishNet.Managing.Logging;
 using FishNet.Transporting;
 using Steamworks;
@@ -42,16 +41,6 @@ namespace FishySteamworks.Client
         #endregion
 
         /// <summary>
-        /// Initializes this for use.
-        /// </summary>
-        /// <param name="t"></param>
-        internal override void Initialize(Transport t)
-        {
-            base.Initialize(t);
-            _onLocalConnectionStateCallback = Callback<SteamNetConnectionStatusChangedCallback_t>.Create(OnLocalConnectionState);
-        }
-
-        /// <summary>
         /// Checks of a connect attempt should time out.
         /// </summary>
         private void CheckTimeout()
@@ -83,6 +72,9 @@ namespace FishySteamworks.Client
         {
             try
             {
+                if (_onLocalConnectionStateCallback == null)
+                    _onLocalConnectionStateCallback = Callback<SteamNetConnectionStatusChangedCallback_t>.Create(OnLocalConnectionState);
+
                 base.PeerToPeer = peerToPeer;
                 //If address is required then make sure it can be parsed.
                 byte[] ip = (!peerToPeer) ? base.GetIPBytes(address) : null;
@@ -119,7 +111,6 @@ namespace FishySteamworks.Client
                 return false;
             }
 
-            base.SetLocalConnectionState(LocalConnectionStates.Started, false);
             return true;
         }
 
@@ -151,23 +142,29 @@ namespace FishySteamworks.Client
         /// </summary>
         internal bool StopConnection()
         {
-            if (base.GetLocalConnectionState() == LocalConnectionStates.Stopped || base.GetLocalConnectionState() == LocalConnectionStates.Stopping)
-                return false;
-
-            base.SetLocalConnectionState(LocalConnectionStates.Stopping, false);
             //Manually abort thread to close it down quicker.
             if (_timeoutThread != null && _timeoutThread.IsAlive)
                 _timeoutThread.Abort();
 
-            //Reset callback.
-            if (_onLocalConnectionStateCallback != null)
+            /* Try to close the socket before exiting early
+            * We never want to leave sockets open. */
+            if (_socket != HSteamNetConnection.Invalid)
             {
-                _onLocalConnectionStateCallback.Dispose();
-                _onLocalConnectionStateCallback = null;
+                //Reset callback.
+                if (_onLocalConnectionStateCallback != null)
+                {
+                    _onLocalConnectionStateCallback.Dispose();
+                    _onLocalConnectionStateCallback = null;
+                }
+
+                SteamNetworkingSockets.CloseConnection(_socket, 0, string.Empty, false);
+                _socket = HSteamNetConnection.Invalid;
             }
 
-            SteamNetworkingSockets.CloseConnection(_socket, 0, string.Empty, false);
-            _socket.m_HSteamNetConnection = 0;
+            if (base.GetLocalConnectionState() == LocalConnectionStates.Stopped || base.GetLocalConnectionState() == LocalConnectionStates.Stopping)
+                return false;
+
+            base.SetLocalConnectionState(LocalConnectionStates.Stopping, false);
             base.SetLocalConnectionState(LocalConnectionStates.Stopped, false);
 
             return true;

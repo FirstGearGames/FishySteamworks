@@ -7,6 +7,7 @@ using Steamworks;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace FishySteamworks.Server
@@ -60,7 +61,7 @@ namespace FishySteamworks.Server
         /// <summary>
         /// Called when a remote connection state changes.
         /// </summary>
-        private Callback<SteamNetConnectionStatusChangedCallback_t> _onRemoteConnectionStateCallback = null;
+        private Steamworks.Callback<SteamNetConnectionStatusChangedCallback_t> _onRemoteConnectionStateCallback;
         /// <summary>
         /// ConnectionIds which can be reused.
         /// </summary>
@@ -71,15 +72,6 @@ namespace FishySteamworks.Server
         private ClientHostSocket _clientHost;
         #endregion
 
-        /// <summary>
-        /// Initializes this for use.
-        /// </summary>
-        /// <param name="t"></param>
-        internal override void Initialize(Transport t)
-        {
-            base.Initialize(t);
-            _onRemoteConnectionStateCallback = Callback<SteamNetConnectionStatusChangedCallback_t>.Create(OnRemoteConnectionState);
-        }
 
         /// <summary>
         /// Resets the socket if invalid.
@@ -100,6 +92,9 @@ namespace FishySteamworks.Server
         {
             try
             {
+                if (_onRemoteConnectionStateCallback == null)
+                    _onRemoteConnectionStateCallback = Steamworks.Callback<SteamNetConnectionStatusChangedCallback_t>.Create(OnRemoteConnectionState);
+
                 base.PeerToPeer = peerToPeer;
 
                 //If address is required then make sure it can be parsed.
@@ -116,7 +111,7 @@ namespace FishySteamworks.Server
                 if (base.PeerToPeer)
                 {
 #if UNITY_SERVER
-                _socket = SteamGameServerNetworkingSockets.CreateListenSocketP2P(0, options.Length, options);
+                    _socket = SteamGameServerNetworkingSockets.CreateListenSocketP2P(0, options.Length, options);
 #else
                     _socket = SteamNetworkingSockets.CreateListenSocketP2P(0, options.Length, options);
 #endif
@@ -128,7 +123,7 @@ namespace FishySteamworks.Server
                     if (ip != null)
                         addr.SetIPv6(ip, port);
 #if UNITY_SERVER
-                _socket = SteamGameServerNetworkingSockets.CreateListenSocketIP(ref addr, 0, options);
+                    _socket = SteamGameServerNetworkingSockets.CreateListenSocketIP(ref addr, 0, options);
 #else
                     _socket = SteamNetworkingSockets.CreateListenSocketIP(ref addr, 0, options);
 #endif
@@ -144,26 +139,33 @@ namespace FishySteamworks.Server
             return true;
         }
 
+
         /// <summary>
         /// Stops the local socket.
         /// </summary>
         internal bool StopConnection()
         {
+            /* Try to close the socket before exiting early
+             * We never want to leave sockets open. */
+            if (_socket != HSteamListenSocket.Invalid)
+            {
+#if UNITY_SERVER
+            SteamGameServerNetworkingSockets.CloseListenSocket(_socket);
+#else
+                SteamNetworkingSockets.CloseListenSocket(_socket);
+#endif
+                if (_onRemoteConnectionStateCallback != null)
+                {
+                    _onRemoteConnectionStateCallback.Dispose();
+                    _onRemoteConnectionStateCallback = null;
+                }
+                _socket = HSteamListenSocket.Invalid;
+            }
+
             if (base.GetLocalConnectionState() == LocalConnectionStates.Stopped)
                 return false;
 
             base.SetLocalConnectionState(LocalConnectionStates.Stopping, true);
-#if UNITY_SERVER
-            SteamGameServerNetworkingSockets.CloseListenSocket(_socket);
-#else
-            SteamNetworkingSockets.CloseListenSocket(_socket);
-#endif
-            if (_onRemoteConnectionStateCallback != null)
-            {
-                _onRemoteConnectionStateCallback.Dispose();
-                _onRemoteConnectionStateCallback = null;
-            }
-            _socket = HSteamListenSocket.Invalid;
             base.SetLocalConnectionState(LocalConnectionStates.Stopped, true);
 
             return true;
@@ -228,15 +230,16 @@ namespace FishySteamworks.Server
         /// <summary>
         /// Called when a remote connection state changes.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void OnRemoteConnectionState(SteamNetConnectionStatusChangedCallback_t args)
         {
             ulong clientSteamID = args.m_info.m_identityRemote.GetSteamID64();
             if (args.m_info.m_eState == ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_Connecting)
             {
-                if (_steamConnections.Count >= _maximumClients)
+                if (_steamConnections.Count >= GetMaximumClients())
                 {
                     if (base.Transport.NetworkManager.CanLog(LoggingType.Common))
-                        Debug.Log($"Incoming connection {clientSteamID} would exceed max connection count. Rejecting.");
+                        Debug.Log($"Incoming connection {clientSteamID} was rejected because would exceed the maximum connection count.");
 #if UNITY_SERVER
                     SteamGameServerNetworkingSockets.CloseConnection(args.m_hConn, 0, "Max Connection Count", false);
 #else
@@ -257,7 +260,8 @@ namespace FishySteamworks.Server
                 }
                 else
                 {
-                    Debug.Log($"Connection {clientSteamID} could not be accepted: {res.ToString()}");
+                    if (base.Transport.NetworkManager.CanLog(LoggingType.Common))
+                        Debug.Log($"Connection {clientSteamID} could not be accepted: {res.ToString()}");
                 }
             }
             else if (args.m_info.m_eState == ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_Connected)

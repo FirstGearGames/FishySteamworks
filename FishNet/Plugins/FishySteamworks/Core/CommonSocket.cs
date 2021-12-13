@@ -1,5 +1,4 @@
 #if !FISHYSTEAMWORKS
-using FishNet.Managing;
 using FishNet.Managing.Logging;
 using FishNet.Transporting;
 using Steamworks;
@@ -172,7 +171,9 @@ namespace FishySteamworks
 
             int packetLength = data.m_cbSize;
             Marshal.Copy(data.m_pData, buffer, 0, packetLength);
-            data.Release();
+
+            //data.Release();
+            SteamNetworkingMessage_t.Release(ptr);
             //Channel will be at the end of the packet.
             channel = buffer[packetLength - 1];
             //Set segment to length - 1 to exclude channel.

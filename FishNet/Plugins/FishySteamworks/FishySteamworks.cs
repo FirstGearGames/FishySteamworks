@@ -1,5 +1,6 @@
 #if !FISHYSTEAMWORKS
 using FishNet.Managing;
+using FishNet.Managing.Logging;
 using FishNet.Transporting;
 using Steamworks;
 using System;
@@ -43,7 +44,7 @@ namespace FishySteamworks
         [Tooltip("Maximum number of players which may be connected at once.")]
         [Range(1, ushort.MaxValue)]
         [SerializeField]
-        private ushort _maximumClients = 4095;
+        private ushort _maximumClients = 9001;
         /// <summary>
         /// True if using peer to peer socket.
         /// </summary>
@@ -58,7 +59,7 @@ namespace FishySteamworks
         private string _clientAddress = string.Empty;
         #endregion
 
-        #region Private.
+        #region Private. 
         /// <summary>
         /// MTUs for each channel.
         /// </summary>
@@ -66,15 +67,15 @@ namespace FishySteamworks
         /// <summary>
         /// Client when acting as client only.
         /// </summary>
-        private Client.ClientSocket _client = new Client.ClientSocket();
+        private Client.ClientSocket _client;
         /// <summary>
         /// Client when acting as host.
         /// </summary>
-        private Client.ClientHostSocket _clientHost = new Client.ClientHostSocket();
+        private Client.ClientHostSocket _clientHost;
         /// <summary>
         /// Server for the transport.
         /// </summary>
-        private Server.ServerSocket _server = new Server.ServerSocket();
+        private Server.ServerSocket _server;
         #endregion
 
         #region Const.
@@ -87,6 +88,10 @@ namespace FishySteamworks
         public override void Initialize(NetworkManager networkManager)
         {
             base.Initialize(networkManager);
+
+            _client = new Client.ClientSocket();
+            _clientHost = new Client.ClientHostSocket();
+            _server = new Server.ServerSocket();
 
             CreateChannelData();
             WriteSteamAppId();
@@ -150,15 +155,23 @@ namespace FishySteamworks
         /// <summary>
         /// Tries to initialize steam network access.
         /// </summary>
-        private void InitializeRelayNetworkAccess()
+        private bool InitializeRelayNetworkAccess()
         {
+            try
+            {
 #if UNITY_SERVER
             SteamGameServerNetworkingUtils.InitRelayNetworkAccess();
 #else
-            SteamNetworkingUtils.InitRelayNetworkAccess();
-            if (IsNetworkAccessAvailable())
-                LocalUserSteamID = SteamUser.GetSteamID().m_SteamID;
+                SteamNetworkingUtils.InitRelayNetworkAccess();
+                if (IsNetworkAccessAvailable())
+                    LocalUserSteamID = SteamUser.GetSteamID().m_SteamID;
 #endif
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         /// <summary>
@@ -257,11 +270,11 @@ namespace FishySteamworks
         public override void IterateIncoming(bool server)
         {
             if (server)
-            { 
+            {
                 _server.IterateIncoming();
             }
             else
-            { 
+            {
                 _client.IterateIncoming();
                 _clientHost.IterateIncoming();
             }
@@ -437,16 +450,23 @@ namespace FishySteamworks
         /// <returns>True if there were no blocks. A true response does not promise a socket will or has connected.</returns>
         private bool StartServer()
         {
-            InitializeRelayNetworkAccess();
+            if (!InitializeRelayNetworkAccess())
+            {
+                if (NetworkManager.CanLog(LoggingType.Error))
+                    Debug.LogError($"RelayNetworkAccess could not be initialized.");
+                return false;
+            }
             if (!IsNetworkAccessAvailable())
             {
-                Debug.LogError("Server network access is not available.");
+                if (NetworkManager.CanLog(LoggingType.Error))
+                    Debug.LogError("Server network access is not available.");
                 return false;
             }
             _server.ResetInvalidSocket();
             if (_server.GetLocalConnectionState() != LocalConnectionStates.Stopped)
             {
-                Debug.LogError("Server is already running.");
+                if (NetworkManager.CanLog(LoggingType.Error))
+                    Debug.LogError("Server is already running.");
                 return false;
             }
 
@@ -454,7 +474,7 @@ namespace FishySteamworks
             /* If remote _client is running then stop it
              * and start the client host variant. */
             if (clientRunning)
-                _client.StopConnection();                
+                _client.StopConnection();
 
             bool result = _server.StartConnection(_serverBindAddress, _port, _maximumClients, _peerToPeer);
             //If need to restart client.
@@ -484,17 +504,24 @@ namespace FishySteamworks
             {
                 if (_client.GetLocalConnectionState() != LocalConnectionStates.Stopped)
                 {
-                    Debug.LogError("Client is already running.");
+                    if (NetworkManager.CanLog(LoggingType.Error))
+                        Debug.LogError("Client is already running.");
                     return false;
                 }
                 //Stop client host if running.
                 if (_clientHost.GetLocalConnectionState() != LocalConnectionStates.Stopped)
                     _clientHost.StopConnection();
                 //Initialize.
-                InitializeRelayNetworkAccess();
+                if (!InitializeRelayNetworkAccess())
+                {
+                    if (NetworkManager.CanLog(LoggingType.Error))
+                        Debug.LogError($"RelayNetworkAccess could not be initialized.");
+                    return false;
+                }
                 if (!IsNetworkAccessAvailable())
                 {
-                    Debug.LogError("Client network access is not available.");
+                    if (NetworkManager.CanLog(LoggingType.Error))
+                        Debug.LogError("Client network access is not available.");
                     return false;
                 }
 

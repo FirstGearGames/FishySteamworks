@@ -1,3 +1,6 @@
+1.4.2
+	- FishNetworking 0.1.5.Nightly.10 Support
+
 1.4.1
 	- Fixed server incorrectly rejecting connections due to maximum clients met.
 	- Fixed client giving false connection started response.

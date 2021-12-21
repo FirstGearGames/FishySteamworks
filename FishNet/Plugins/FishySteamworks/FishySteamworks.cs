@@ -403,15 +403,6 @@ namespace FishySteamworks
         }
 
         /// <summary>
-        /// Starts the local client.
-        /// </summary>
-        /// <param name="address">Address to connect to.</param>
-        public override bool StartConnection(string address)
-        {
-            return StartClient(address);
-        }
-
-        /// <summary>
         /// Stops the local server or client.
         /// </summary>
         /// <param name="server">True to stop server.</param>

@@ -480,7 +480,10 @@ namespace FishySteamworks
         /// </summary>
         private bool StopServer()
         {
-            return _server.StopConnection();
+            if (_server != null)
+                return _server.StopConnection();
+
+            return false;
         }
 
         /// <summary>
@@ -534,8 +537,10 @@ namespace FishySteamworks
         private bool StopClient()
         {
             bool result = false;
-            result |= _client.StopConnection();
-            result |= _clientHost.StopConnection();
+            if (_client != null)
+                result |= _client.StopConnection();
+            if (_clientHost != null)
+                result |= _clientHost.StopConnection();
             return result;
         }
 

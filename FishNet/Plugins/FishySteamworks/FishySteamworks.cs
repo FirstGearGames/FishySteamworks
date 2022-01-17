@@ -558,14 +558,6 @@ namespace FishySteamworks
 
         #region Channels.
         /// <summary>
-        /// Returns how many channels the transport is using.
-        /// </summary>
-        /// <returns></returns>
-        public override byte GetChannelCount()
-        {
-            return (byte)_mtus.Length;
-        }
-        /// <summary>
         /// Returns which channel to use by default for reliable.
         /// </summary>
         public override byte GetDefaultReliableChannel()

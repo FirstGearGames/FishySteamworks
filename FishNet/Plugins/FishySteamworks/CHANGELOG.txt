@@ -1,3 +1,6 @@
+1.4.4
+	- Removed obsolete method.
+
 1.4.3
 	- Added a few sanity checks.
 

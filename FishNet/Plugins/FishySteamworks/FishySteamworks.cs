@@ -85,9 +85,9 @@ namespace FishySteamworks
         internal const int CLIENT_HOST_ID = short.MaxValue;
         #endregion
 
-        public override void Initialize(NetworkManager networkManager)
+        public override void Initialize(NetworkManager networkManager, int transportIndex)
         {
-            base.Initialize(networkManager);
+            base.Initialize(networkManager, transportIndex);
 
             _client = new Client.ClientSocket();
             _clientHost = new Client.ClientHostSocket();
@@ -557,20 +557,6 @@ namespace FishySteamworks
         #endregion
 
         #region Channels.
-        /// <summary>
-        /// Returns which channel to use by default for reliable.
-        /// </summary>
-        public override byte GetDefaultReliableChannel()
-        {
-            return 0;
-        }
-        /// <summary>
-        /// Returns which channel to use by default for unreliable.
-        /// </summary>
-        public override byte GetDefaultUnreliableChannel()
-        {
-            return 1;
-        }
         /// <summary>
         /// Gets the MTU for a channel. This should take header size into consideration.
         /// For example, if MTU is 1200 and a packet header for this channel is 10 in size, this method should return 1190.

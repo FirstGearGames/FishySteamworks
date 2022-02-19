@@ -184,7 +184,7 @@ namespace FishySteamworks.Client
                 for (int i = 0; i < messageCount; i++)
                 {
                     base.GetMessage(base.MessagePointers[i], InboundBuffer, out ArraySegment<byte> segment, out byte channel);
-                    base.Transport.HandleClientReceivedDataArgs(new ClientReceivedDataArgs(segment, (Channel)channel));
+                    base.Transport.HandleClientReceivedDataArgs(new ClientReceivedDataArgs(segment, (Channel)channel, Transport.Index));
                 }
             }
         }

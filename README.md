@@ -1,7 +1,7 @@
 # FishySteamworks
 A Steamworks implementation for Fish-Net.
 
-Thank you Heathen Engineering for your support.
+Thank you [Heathen Engineering](https://github.com/sponsors/heathen-engineering) for your support.
 
 This is an improved fork from https://github.com/Chykary/FizzySteamworks.
 
@@ -13,10 +13,8 @@ Fish-Networking https://github.com/FirstGearGames/FishNet
 
 .Net 4.5x
 
-If you already have SteamWorks.Net in your project, you might need to delete either your copy, or the one included within this transport.	
-
 These projects need to be installed and working before you can use this transport.
-1. [SteamWorks.NET](https://github.com/rlabrecque/Steamworks.NET) FishySteamworks relies on Steamworks.NET to communicate with the Steamworks API(https://partner.steamgames.com/doc/sdk). Installation guide by Heathen Engineering: https://kb.heathenengineering.com/assets/steamworks/installation
+1. [SteamWorks.NET](https://github.com/rlabrecque/Steamworks.NET) FishySteamworks relies on Steamworks.NET to communicate with the Steamworks API(https://partner.steamgames.com/doc/sdk). [Installation guide](https://kb.heathenengineering.com/assets/steamworks/installation#install-steamworks.net) by Heathen Engineering: https://kb.heathenengineering.com/assets/steamworks/installation
 
 
 

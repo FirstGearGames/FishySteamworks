@@ -1,8 +1,11 @@
 #if !FISHYSTEAMWORKS
 using FishNet.Managing.Logging;
 using FishNet.Transporting;
+using FishNet.Utility.Performance;
 using Steamworks;
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Net;
 using System.Runtime.InteropServices;
 using UnityEngine;
@@ -157,6 +160,28 @@ namespace FishySteamworks
 
             pinnedArray.Free();
             return result;
+        }
+
+        /// <summary>
+        /// Clears a queue.
+        /// </summary>
+        /// <param name="queue"></param>
+        internal void ClearQueue(ConcurrentQueue<LocalPacket> queue)
+        {
+            while (queue.TryDequeue(out LocalPacket p))
+                ByteArrayPool.Store(p.Data);
+        }
+        /// <summary>
+        /// Clears a queue.
+        /// </summary>
+        /// <param name="queue"></param>
+        internal void ClearQueue(Queue<LocalPacket> queue)
+        {
+            while (queue.Count > 0)
+            {
+                LocalPacket p = queue.Dequeue();
+                ByteArrayPool.Store(p.Data);
+            }
         }
 
         /// <summary>

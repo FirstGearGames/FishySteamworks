@@ -3,7 +3,7 @@ using FishNet.Transporting;
 using FishNet.Utility.Performance;
 using FishySteamworks.Server;
 using System;
-using System.Collections.Concurrent;
+using System.Collections.Generic;
 
 namespace FishySteamworks.Client
 {
@@ -20,7 +20,7 @@ namespace FishySteamworks.Client
         /// <summary>
         /// Incomimg data.
         /// </summary>
-        private ConcurrentQueue<LocalPacket> _incoming = new ConcurrentQueue<LocalPacket>();
+        private Queue<LocalPacket> _incoming = new Queue<LocalPacket>();
         #endregion
 
         /// <summary>
@@ -75,7 +75,7 @@ namespace FishySteamworks.Client
             if (base.GetLocalConnectionState() == LocalConnectionStates.Stopped || base.GetLocalConnectionState() == LocalConnectionStates.Stopping)
                 return false;
 
-            while (_incoming.TryDequeue(out _)) ;
+            base.ClearQueue(_incoming);
             //Immediately set stopped since no real connection exists.
             SetLocalConnectionState(LocalConnectionStates.Stopping, false);
             SetLocalConnectionState(LocalConnectionStates.Stopped, false);
@@ -92,8 +92,9 @@ namespace FishySteamworks.Client
             if (base.GetLocalConnectionState() != LocalConnectionStates.Started)
                 return;
 
-            while (_incoming.TryDequeue(out LocalPacket packet))
+            while (_incoming.Count > 0)
             {
+                LocalPacket packet = _incoming.Dequeue();
                 ArraySegment<byte> segment = new ArraySegment<byte>(packet.Data, 0, packet.Length);
                 base.Transport.HandleClientReceivedDataArgs(new ClientReceivedDataArgs(segment, (Channel)packet.Channel, Transport.Index));
                 ByteArrayPool.Store(packet.Data);

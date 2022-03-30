@@ -1,3 +1,8 @@
+1.6.0
+	- GetConnectionAddress now works for clientHost as well.
+	- Changed from ConcurrentQueue to Queue.
+	- Shutting down the socket properly recycles pending packets now.
+
 1.5.0
 	- FishNetworking 1.3.1 Multipass transport support.
 

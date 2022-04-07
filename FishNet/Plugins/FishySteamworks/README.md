@@ -1,45 +1,50 @@
 # FishySteamworks
 A Steamworks implementation for Fish-Net.
 
-Thank you Heathen Engineering for your support.
+Thank you [Heathen Engineering](https://github.com/sponsors/heathen-engineering) for your support.
 
-	This is an improved fork from https://github.com/Chykary/FizzySteamworks.
+This is an improved fork from https://github.com/Chykary/FizzySteamworks.
+
+
 
 ## Dependencies
-	Fish-Networking https://github.com/FirstGearGames/FishNet
 
-	.Net 4.5x
+Fish-Networking https://github.com/FirstGearGames/FishNet
 
-	If you already have SteamWorks.Net in your project, you might need to delete either your copy, or the one included within this transport.	
+.Net 4.5x
 
-	These projects need to be installed and working before you can use this transport.
-		1. [SteamWorks.NET](https://github.com/rlabrecque/Steamworks.NET) FishySteamworks relies on Steamworks.NET to communicate with the Steamworks API(https://partner.steamgames.com/doc/sdk).
-	Installation guide by Heathen Engineering: https://kb.heathenengineering.com/assets/steamworks/installation
+These projects need to be installed and working before you can use this transport.
+1. [SteamWorks.NET](https://github.com/rlabrecque/Steamworks.NET) FishySteamworks relies on Steamworks.NET to communicate with the Steamworks API(https://partner.steamgames.com/doc/sdk). [Installation guide](https://kb.heathenengineering.com/assets/steamworks/installation#install-steamworks.net) by Heathen Engineering: https://kb.heathenengineering.com/assets/steamworks/installation
 
 
 
 ## Setting Up
 
-3. Add FishySteamworks component to your NetworkManager object. Either remove other transports or add TransportManager and specify which transport to use.
+1. Add FishySteamworks component to your NetworkManager object. Either remove other transports or add TransportManager and specify which transport to use.
 
-4. Enter your Steam App ID in the added FishySteamworks component.
+2. Enter your Steam App Id in the added FishySteamworks component. For testing you may use 480 (Space Wars) as the App Id.
+
+3. Choose Peer to Peer to connect using the Steam relay.
+
+4. You may need to add SteamManager to your NetworkManager object. Some frameworks such as Heathen Engineerings' use their own version of SteamManager. Please consult their discord here https://discord.gg/SGd4vkRdSe for more information on using their assets.
+If you need a SteamManager to get started import FishNet\Plugins\FishySteamworks\SteamManager.unitypackage.
 
 
 
 ## Host
-To be able to have your game working you need to make sure you have Steam running in the background. **SteamManager will print a Debug Message if it initializes correctly.**
+You may host as server only, or client and server in a single executable.
 
 
 
 ## Client
-Before sending your game to your buddy make sure you have your **steamID64** ready. To find your **steamID64** the transport prints the hosts **steamID64** in the console when the server has started.
+Clients connect to one-another by using the host's steamId64. You can get this information within your Steam application.
+To do so open Steam, go to the View menu, Settings, Interface. Ensure 'Display web address bars when available' is checked.
+Next view your profile within Steam. Your steamId64 is the large number at the end of your profile URL.
 
-1. Send the game to your buddy. The transport shows your Steam User ID after you have started a server.
-2. Your buddy needs your **steamID64** to be able to connect.
-3. Place the **steamID64** into **"localhost"** then click **"Client"**
-5. Then they will be connected to you.
-
+Connecting to a host is easy as putting the steamId64 in the 'Client Address' field of FishySteamworks and starting the client. You may instead start client by calling ClientManager.StartConnection(steamId64);
 
 
-## Testing your game locally
-You cant connect to yourself locally while using FishySteamworks since it's using steams P2P. If you want to test your game locally you'll have to use default transport instead.
+
+## Testing Two Builds Locally
+Steam has limitations which prevent you from connecting to yourself locally over two builds. To do so, you must have two steam Ids, on two separate devices.
+You however may run as server and client in a single executable. If you need to test using two builds(or editors) on a single device you will have to use the default transport.

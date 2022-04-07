@@ -26,7 +26,8 @@ These projects need to be installed and working before you can use this transpor
 
 3. Choose Peer to Peer to connect using the Steam relay.
 
-You may need to add SteamManager to your NetworkManager object. Some frameworks such as Heathen Engineerings' use their own version of SteamManager. Please consult their discord here https://discord.gg/SGd4vkRdSe for more information on using their assets.
+4. You may need to add SteamManager to your NetworkManager object. Some frameworks such as Heathen Engineerings' use their own version of SteamManager. Please consult their discord here https://discord.gg/SGd4vkRdSe for more information on using their assets.
+If you need a SteamManager to get started import FishNet\Plugins\FishySteamworks\SteamManager.unitypackage.
 
 
 

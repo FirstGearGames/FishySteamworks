@@ -54,7 +54,7 @@ namespace FishySteamworks.Client
                     StopConnection();
 
                 Thread.Sleep(50);
-            } while (base.GetLocalConnectionState() == LocalConnectionStates.Starting);
+            } while (base.GetLocalConnectionState() == LocalConnectionState.Starting);
             sw.Stop();
 
             //If here then the thread no longer needs to run. Can abort itself.
@@ -80,11 +80,11 @@ namespace FishySteamworks.Client
                 byte[] ip = (!peerToPeer) ? base.GetIPBytes(address) : null;
                 if (!peerToPeer && ip == null)
                 {
-                    base.SetLocalConnectionState(LocalConnectionStates.Stopped, false);
+                    base.SetLocalConnectionState(LocalConnectionState.Stopped, false);
                     return false;
                 }
 
-                base.SetLocalConnectionState(LocalConnectionStates.Starting, false);
+                base.SetLocalConnectionState(LocalConnectionState.Starting, false);
                 _connectTimeout = Time.unscaledTime + CONNECT_TIMEOUT_DURATION;
                 _timeoutThread = new Thread(CheckTimeout);
                 _timeoutThread.Start();
@@ -107,7 +107,7 @@ namespace FishySteamworks.Client
             }
             catch
             {
-                base.SetLocalConnectionState(LocalConnectionStates.Stopped, false);
+                base.SetLocalConnectionState(LocalConnectionState.Stopped, false);
                 return false;
             }
 
@@ -122,7 +122,7 @@ namespace FishySteamworks.Client
         {
             if (args.m_info.m_eState == ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_Connected)
             {
-                base.SetLocalConnectionState(LocalConnectionStates.Started, false);
+                base.SetLocalConnectionState(LocalConnectionState.Started, false);
             }
             else if (args.m_info.m_eState == ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_ClosedByPeer || args.m_info.m_eState == ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_ProblemDetectedLocally)
             {
@@ -161,11 +161,11 @@ namespace FishySteamworks.Client
                 _socket = HSteamNetConnection.Invalid;
             }
 
-            if (base.GetLocalConnectionState() == LocalConnectionStates.Stopped || base.GetLocalConnectionState() == LocalConnectionStates.Stopping)
+            if (base.GetLocalConnectionState() == LocalConnectionState.Stopped || base.GetLocalConnectionState() == LocalConnectionState.Stopping)
                 return false;
 
-            base.SetLocalConnectionState(LocalConnectionStates.Stopping, false);
-            base.SetLocalConnectionState(LocalConnectionStates.Stopped, false);
+            base.SetLocalConnectionState(LocalConnectionState.Stopping, false);
+            base.SetLocalConnectionState(LocalConnectionState.Stopped, false);
 
             return true;
         }
@@ -175,7 +175,7 @@ namespace FishySteamworks.Client
         /// </summary>
         internal void IterateIncoming()
         {
-            if (base.GetLocalConnectionState() != LocalConnectionStates.Started)
+            if (base.GetLocalConnectionState() != LocalConnectionState.Started)
                 return;
 
             int messageCount = SteamNetworkingSockets.ReceiveMessagesOnConnection(_socket, base.MessagePointers, MAX_MESSAGES);
@@ -196,7 +196,7 @@ namespace FishySteamworks.Client
         /// <param name="segment"></param>
         internal void SendToServer(byte channelId, ArraySegment<byte> segment)
         {
-            if (base.GetLocalConnectionState() != LocalConnectionStates.Started)
+            if (base.GetLocalConnectionState() != LocalConnectionState.Started)
                 return;
 
             EResult res = base.Send(_socket, segment, channelId);
@@ -219,7 +219,7 @@ namespace FishySteamworks.Client
         /// </summary>
         internal void IterateOutgoing()
         {
-            if (base.GetLocalConnectionState() != LocalConnectionStates.Started)
+            if (base.GetLocalConnectionState() != LocalConnectionState.Started)
                 return;
 
             SteamNetworkingSockets.FlushMessagesOnConnection(_socket);

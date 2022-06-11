@@ -20,12 +20,12 @@ namespace FishySteamworks
         /// <summary>
         /// Current ConnectionState.
         /// </summary>
-        private LocalConnectionStates _connectionState = LocalConnectionStates.Stopped;
+        private LocalConnectionState _connectionState = LocalConnectionState.Stopped;
         /// <summary>
         /// Returns the current ConnectionState.
         /// </summary>
         /// <returns></returns>
-        internal LocalConnectionStates GetLocalConnectionState()
+        internal LocalConnectionState GetLocalConnectionState()
         {
             return _connectionState;
         }
@@ -33,7 +33,7 @@ namespace FishySteamworks
         /// Sets a new connection state.
         /// </summary>
         /// <param name="connectionState"></param>
-        protected virtual void SetLocalConnectionState(LocalConnectionStates connectionState, bool server)
+        protected virtual void SetLocalConnectionState(LocalConnectionState connectionState, bool server)
         {
             //If state hasn't changed.
             if (connectionState == _connectionState)

@@ -17,13 +17,13 @@ namespace FishySteamworks.Server
         /// Gets the current ConnectionState of a remote client on the server.
         /// </summary>
         /// <param name="connectionId">ConnectionId to get ConnectionState for.</param>
-        internal RemoteConnectionStates GetConnectionState(int connectionId)
+        internal RemoteConnectionState GetConnectionState(int connectionId)
         {
             //Remote clients can only have Started or Stopped states since we cannot know in between.
             if (_steamConnections.Second.ContainsKey(connectionId))
-                return RemoteConnectionStates.Started;
+                return RemoteConnectionState.Started;
             else
-                return RemoteConnectionStates.Stopped;
+                return RemoteConnectionState.Stopped;
         }
         #endregion
 
@@ -81,7 +81,7 @@ namespace FishySteamworks.Server
             * safe than sorry and check before trying to connect
             * rather than being stuck in the incorrect state. */
             if (_socket == HSteamListenSocket.Invalid)
-                base.SetLocalConnectionState(LocalConnectionStates.Stopped, true);
+                base.SetLocalConnectionState(LocalConnectionState.Stopped, true);
         }
         /// <summary>
         /// Starts the server.
@@ -103,7 +103,7 @@ namespace FishySteamworks.Server
                 _nextConnectionId = 0;
                 _cachedConnectionIds.Clear();
 
-                base.SetLocalConnectionState(LocalConnectionStates.Starting, true);
+                base.SetLocalConnectionState(LocalConnectionState.Starting, true);
                 SteamNetworkingConfigValue_t[] options = new SteamNetworkingConfigValue_t[] { };
 
                 if (base.PeerToPeer)
@@ -129,11 +129,11 @@ namespace FishySteamworks.Server
             }
             catch
             {
-                base.SetLocalConnectionState(LocalConnectionStates.Stopped, true);
+                base.SetLocalConnectionState(LocalConnectionState.Stopped, true);
                 return false;
             }
 
-            base.SetLocalConnectionState(LocalConnectionStates.Started, true);
+            base.SetLocalConnectionState(LocalConnectionState.Started, true);
             return true;
         }
 
@@ -160,11 +160,11 @@ namespace FishySteamworks.Server
                 _socket = HSteamListenSocket.Invalid;
             }
 
-            if (base.GetLocalConnectionState() == LocalConnectionStates.Stopped)
+            if (base.GetLocalConnectionState() == LocalConnectionState.Stopped)
                 return false;
 
-            base.SetLocalConnectionState(LocalConnectionStates.Stopping, true);
-            base.SetLocalConnectionState(LocalConnectionStates.Stopped, true);
+            base.SetLocalConnectionState(LocalConnectionState.Stopping, true);
+            base.SetLocalConnectionState(LocalConnectionState.Stopped, true);
 
             return true;
         }
@@ -219,7 +219,7 @@ namespace FishySteamworks.Server
             _steamIds.Remove(connectionId);
             if (base.Transport.NetworkManager.CanLog(LoggingType.Common))
                 Debug.Log($"Client with ConnectionID {connectionId} disconnected.");
-            base.Transport.HandleRemoteConnectionState(new RemoteConnectionStateArgs(RemoteConnectionStates.Stopped, connectionId, Transport.Index));
+            base.Transport.HandleRemoteConnectionState(new RemoteConnectionStateArgs(RemoteConnectionState.Stopped, connectionId, Transport.Index));
             _cachedConnectionIds.Enqueue(connectionId);
 
             return true;
@@ -270,7 +270,7 @@ namespace FishySteamworks.Server
 
                 if (base.Transport.NetworkManager.CanLog(LoggingType.Common))
                     Debug.Log($"Client with SteamID {clientSteamID} connected. Assigning connection id {connectionId}");
-                base.Transport.HandleRemoteConnectionState(new RemoteConnectionStateArgs(RemoteConnectionStates.Started, connectionId, Transport.Index));
+                base.Transport.HandleRemoteConnectionState(new RemoteConnectionStateArgs(RemoteConnectionState.Started, connectionId, Transport.Index));
             }
             else if (args.m_info.m_eState == ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_ClosedByPeer || args.m_info.m_eState == ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_ProblemDetectedLocally)
             {
@@ -292,7 +292,7 @@ namespace FishySteamworks.Server
         /// </summary>
         internal void IterateOutgoing()
         {
-            if (base.GetLocalConnectionState() != LocalConnectionStates.Started)
+            if (base.GetLocalConnectionState() != LocalConnectionState.Started)
                 return;
 
             foreach (HSteamNetConnection conn in _steamConnections.FirstTypes)
@@ -312,7 +312,7 @@ namespace FishySteamworks.Server
         internal void IterateIncoming()
         {
             //Stopped or trying to stop.
-            if (base.GetLocalConnectionState() == LocalConnectionStates.Stopped || base.GetLocalConnectionState() == LocalConnectionStates.Stopping)
+            if (base.GetLocalConnectionState() == LocalConnectionState.Stopped || base.GetLocalConnectionState() == LocalConnectionState.Stopping)
                 return;
 
             //Iterate local client packets first.
@@ -353,7 +353,7 @@ namespace FishySteamworks.Server
         /// <param name="connectionId"></param>
         internal void SendToClient(byte channelId, ArraySegment<byte> segment, int connectionId)
         {
-            if (base.GetLocalConnectionState() != LocalConnectionStates.Started)
+            if (base.GetLocalConnectionState() != LocalConnectionState.Started)
                 return;
 
             //Check if sending local client first, send and exit if so.
@@ -447,13 +447,13 @@ namespace FishySteamworks.Server
             if (!started)
             {
                 base.ClearQueue(_clientHostIncoming);
-                base.Transport.HandleRemoteConnectionState(new RemoteConnectionStateArgs(RemoteConnectionStates.Stopped, FishySteamworks.CLIENT_HOST_ID, Transport.Index));
+                base.Transport.HandleRemoteConnectionState(new RemoteConnectionStateArgs(RemoteConnectionState.Stopped, FishySteamworks.CLIENT_HOST_ID, Transport.Index));
                 _steamIds.Remove(steamId);
             }
             else
             {
                 _steamIds[steamId] = FishySteamworks.CLIENT_HOST_ID;
-                base.Transport.HandleRemoteConnectionState(new RemoteConnectionStateArgs(RemoteConnectionStates.Started, FishySteamworks.CLIENT_HOST_ID, Transport.Index));
+                base.Transport.HandleRemoteConnectionState(new RemoteConnectionStateArgs(RemoteConnectionState.Started, FishySteamworks.CLIENT_HOST_ID, Transport.Index));
             }
         }
         /// <summary>

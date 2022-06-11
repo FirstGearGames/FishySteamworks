@@ -29,10 +29,10 @@ namespace FishySteamworks.Client
         internal void CheckSetStarted()
         {
             //Check to set as started.
-            if (_server != null && base.GetLocalConnectionState() == LocalConnectionStates.Starting)
+            if (_server != null && base.GetLocalConnectionState() == LocalConnectionState.Starting)
             {
-                if (_server.GetLocalConnectionState() == LocalConnectionStates.Started)
-                    SetLocalConnectionState(LocalConnectionStates.Started, false);
+                if (_server.GetLocalConnectionState() == LocalConnectionState.Started)
+                    SetLocalConnectionState(LocalConnectionState.Started, false);
             }
         }
 
@@ -48,20 +48,20 @@ namespace FishySteamworks.Client
         {
             _server = serverSocket;
             _server.SetClientHostSocket(this);
-            if (_server.GetLocalConnectionState() != LocalConnectionStates.Started)
+            if (_server.GetLocalConnectionState() != LocalConnectionState.Started)
                 return false;
 
-            SetLocalConnectionState(LocalConnectionStates.Starting, false);
+            SetLocalConnectionState(LocalConnectionState.Starting, false);
             return true;
         }
 
         /// <summary>
         /// Sets a new connection state.
         /// </summary>
-        protected override void SetLocalConnectionState(LocalConnectionStates connectionState, bool server)
+        protected override void SetLocalConnectionState(LocalConnectionState connectionState, bool server)
         {
             base.SetLocalConnectionState(connectionState, server);
-            if (connectionState == LocalConnectionStates.Started)
+            if (connectionState == LocalConnectionState.Started)
                 _server.OnClientHostState(true);
             else
                 _server.OnClientHostState(false);
@@ -72,13 +72,13 @@ namespace FishySteamworks.Client
         /// </summary>
         internal bool StopConnection()
         {
-            if (base.GetLocalConnectionState() == LocalConnectionStates.Stopped || base.GetLocalConnectionState() == LocalConnectionStates.Stopping)
+            if (base.GetLocalConnectionState() == LocalConnectionState.Stopped || base.GetLocalConnectionState() == LocalConnectionState.Stopping)
                 return false;
 
             base.ClearQueue(_incoming);
             //Immediately set stopped since no real connection exists.
-            SetLocalConnectionState(LocalConnectionStates.Stopping, false);
-            SetLocalConnectionState(LocalConnectionStates.Stopped, false);
+            SetLocalConnectionState(LocalConnectionState.Stopping, false);
+            SetLocalConnectionState(LocalConnectionState.Stopped, false);
             _server.SetClientHostSocket(null);
 
             return true;
@@ -89,7 +89,7 @@ namespace FishySteamworks.Client
         /// </summary>
         internal void IterateIncoming()
         {
-            if (base.GetLocalConnectionState() != LocalConnectionStates.Started)
+            if (base.GetLocalConnectionState() != LocalConnectionState.Started)
                 return;
 
             while (_incoming.Count > 0)
@@ -114,9 +114,9 @@ namespace FishySteamworks.Client
         /// </summary>
         internal void SendToServer(byte channelId, ArraySegment<byte> segment)
         {
-            if (base.GetLocalConnectionState() != LocalConnectionStates.Started)
+            if (base.GetLocalConnectionState() != LocalConnectionState.Started)
                 return;
-            if (_server.GetLocalConnectionState() != LocalConnectionStates.Started)
+            if (_server.GetLocalConnectionState() != LocalConnectionState.Started)
                 return;
 
             LocalPacket packet = new LocalPacket(segment, channelId);

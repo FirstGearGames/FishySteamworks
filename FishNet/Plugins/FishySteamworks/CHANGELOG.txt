@@ -1,3 +1,6 @@
+1.7.0
+	- FishNetworking 2.0.0 Support
+
 1.6.0
 	- GetConnectionAddress now works for clientHost as well.
 	- Changed from ConcurrentQueue to Queue.

@@ -70,7 +70,6 @@ namespace FishySteamworks.Server
         private ClientHostSocket _clientHost;
         #endregion
 
-
         /// <summary>
         /// Resets the socket if invalid.
         /// </summary>
@@ -439,22 +438,24 @@ namespace FishySteamworks.Server
         /// </summary>
         internal void OnClientHostState(bool started)
         {
-            _clientHostStarted = started;
             FishySteamworks fs = (FishySteamworks)base.Transport;
             CSteamID steamId = new CSteamID(fs.LocalUserSteamID);
 
-            //If not started flush incoming from local client.
-            if (!started)
+            //If not started but was previously flush incoming from local client.
+            if (!started && _clientHostStarted)
             {
                 base.ClearQueue(_clientHostIncoming);
                 base.Transport.HandleRemoteConnectionState(new RemoteConnectionStateArgs(RemoteConnectionState.Stopped, FishySteamworks.CLIENT_HOST_ID, Transport.Index));
                 _steamIds.Remove(steamId);
             }
-            else
+            //If started.
+            else if (started)
             {
                 _steamIds[steamId] = FishySteamworks.CLIENT_HOST_ID;
                 base.Transport.HandleRemoteConnectionState(new RemoteConnectionStateArgs(RemoteConnectionState.Started, FishySteamworks.CLIENT_HOST_ID, Transport.Index));
             }
+
+            _clientHostStarted = started;
         }
         /// <summary>
         /// Queues a received packet from the local client.

@@ -375,7 +375,7 @@ namespace FishySteamworks
         /// Sets which address the server will bind to.
         /// </summary>
         /// <param name="address"></param>
-        public override void SetServerBindAddress(string address)
+        public override void SetServerBindAddress(string address, IPAddressType addressType)
         {
             _serverBindAddress = address;
         }

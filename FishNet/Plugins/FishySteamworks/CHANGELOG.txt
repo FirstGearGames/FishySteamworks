@@ -1,3 +1,6 @@
+2.1.1
+	- Updated SetServerBindAddress signature to Fish-Networking 2.0.0.
+
 2.1.0
 	- Increased version to match other projects with Fish-Networking 2.0.0 support.
 	- Fixed ClientId 32767 not found error when being used with Multipass.

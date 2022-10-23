@@ -1,3 +1,6 @@
+2.1.2
+	- Added deinitializer to FishySteamworks.
+
 2.1.1
 	- Updated SetServerBindAddress signature to Fish-Networking 2.0.0.
 

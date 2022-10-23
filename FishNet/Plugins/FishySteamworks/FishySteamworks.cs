@@ -11,6 +11,11 @@ namespace FishySteamworks
 {
     public class FishySteamworks : Transport
     {
+        ~FishySteamworks()
+        {
+            Shutdown();
+        }
+
         #region Public.
         /// <summary>
         /// The SteamId for the local user after connecting to or starting the server. This is populated automatically.

@@ -13,7 +13,11 @@ Fish-Networking https://github.com/FirstGearGames/FishNet
 These projects need to be installed and working before you can use this transport.
 1. [SteamWorks.NET](https://github.com/rlabrecque/Steamworks.NET) FishySteamworks relies on Steamworks.NET to communicate with the Steamworks API(https://partner.steamgames.com/doc/sdk). [Installation guide](https://kb.heathenengineering.com/assets/steamworks/installation#install-steamworks.net) by Heathen Engineering: https://kb.heathenengineering.com/assets/steamworks/installation
 
+## Installation
 
+1. Download the latest release from the [releases](https://github.com/FirstGearGames/FishySteamworks/releases) page.
+2. Open and import FishySteamworks.unitypackage into your project.
+3. Set up your project as described below.
 
 ## Setting Up
 

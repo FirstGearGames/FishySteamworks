@@ -1,3 +1,8 @@
+4.0.0	
+	- Fish-Networking 4.0.0 support.
+	- Added check to prevent Shutdown from calling multiple times without a prior initialization.
+	- Removed SteamAppId field; this should be handled by third party softwares.
+
 2.1.2
 	- Added deinitializer to FishySteamworks.
 
@@ -9,7 +14,7 @@
 	- Fixed ClientId 32767 not found error when being used with Multipass.
 
 1.7.0
-	- Fish-Networking 2.0.0 Support
+	- Fish-Networking 2.0.0 support
 
 1.6.0
 	- GetConnectionAddress now works for clientHost as well.

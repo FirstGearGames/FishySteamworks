@@ -421,21 +421,18 @@ namespace FishySteamworks
         {
             if (!InitializeRelayNetworkAccess())
             {
-                if (NetworkManager.CanLog(LoggingType.Error))
-                    Debug.LogError($"RelayNetworkAccess could not be initialized.");
+                base.NetworkManager.LogError($"RelayNetworkAccess could not be initialized.");
                 return false;
             }
             if (!IsNetworkAccessAvailable())
             {
-                if (NetworkManager.CanLog(LoggingType.Error))
-                    Debug.LogError("Server network access is not available.");
+                base.NetworkManager.LogError("Server network access is not available.");
                 return false;
             }
             _server.ResetInvalidSocket();
             if (_server.GetLocalConnectionState() != LocalConnectionState.Stopped)
             {
-                if (NetworkManager.CanLog(LoggingType.Error))
-                    Debug.LogError("Server is already running.");
+                base.NetworkManager.LogError("Server is already running.");
                 return false;
             }
 
@@ -476,8 +473,7 @@ namespace FishySteamworks
             {
                 if (_client.GetLocalConnectionState() != LocalConnectionState.Stopped)
                 {
-                    if (NetworkManager.CanLog(LoggingType.Error))
-                        Debug.LogError("Client is already running.");
+                    base.NetworkManager.LogError("Client is already running.");
                     return false;
                 }
                 //Stop client host if running.
@@ -486,14 +482,12 @@ namespace FishySteamworks
                 //Initialize.
                 if (!InitializeRelayNetworkAccess())
                 {
-                    if (NetworkManager.CanLog(LoggingType.Error))
-                        Debug.LogError($"RelayNetworkAccess could not be initialized.");
+                    base.NetworkManager.LogError($"RelayNetworkAccess could not be initialized.");
                     return false;
                 }
                 if (!IsNetworkAccessAvailable())
                 {
-                    if (NetworkManager.CanLog(LoggingType.Error))
-                        Debug.LogError("Client network access is not available.");
+                    base.NetworkManager.LogError("Client network access is not available.");
                     return false;
                 }
 

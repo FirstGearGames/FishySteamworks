@@ -1,4 +1,5 @@
 #if !FISHYSTEAMWORKS
+using FishNet.Managing;
 using FishNet.Managing.Logging;
 using FishNet.Transporting;
 using FishySteamworks.Client;
@@ -147,7 +148,7 @@ namespace FishySteamworks.Server
             if (_socket != HSteamListenSocket.Invalid)
             {
 #if UNITY_SERVER
-            SteamGameServerNetworkingSockets.CloseListenSocket(_socket);
+                SteamGameServerNetworkingSockets.CloseListenSocket(_socket);
 #else
                 SteamNetworkingSockets.CloseListenSocket(_socket);
 #endif
@@ -196,8 +197,7 @@ namespace FishySteamworks.Server
                 }
                 else
                 {
-                    if (base.Transport.NetworkManager.CanLog(LoggingType.Error))
-                        Debug.LogError($"Steam connection not found for connectionId {connectionId}.");
+                    base.Transport.NetworkManager.LogError($"Steam connection not found for connectionId {connectionId}.");
                     return false;
                 }
             }
@@ -216,8 +216,7 @@ namespace FishySteamworks.Server
 #endif
             _steamConnections.Remove(connectionId);
             _steamIds.Remove(connectionId);
-            if (base.Transport.NetworkManager.CanLog(LoggingType.Common))
-                Debug.Log($"Client with ConnectionID {connectionId} disconnected.");
+            base.Transport.NetworkManager.Log($"Client with ConnectionID {connectionId} disconnected.");
             base.Transport.HandleRemoteConnectionState(new RemoteConnectionStateArgs(RemoteConnectionState.Stopped, connectionId, Transport.Index));
             _cachedConnectionIds.Enqueue(connectionId);
 
@@ -235,8 +234,7 @@ namespace FishySteamworks.Server
             {
                 if (_steamConnections.Count >= GetMaximumClients())
                 {
-                    if (base.Transport.NetworkManager.CanLog(LoggingType.Common))
-                        Debug.Log($"Incoming connection {clientSteamID} was rejected because would exceed the maximum connection count.");
+                    base.Transport.NetworkManager.Log($"Incoming connection {clientSteamID} was rejected because would exceed the maximum connection count.");
 #if UNITY_SERVER
                     SteamGameServerNetworkingSockets.CloseConnection(args.m_hConn, 0, "Max Connection Count", false);
 #else
@@ -251,15 +249,9 @@ namespace FishySteamworks.Server
                 EResult res = SteamNetworkingSockets.AcceptConnection(args.m_hConn);
 #endif
                 if (res == EResult.k_EResultOK)
-                {
-                    if (base.Transport.NetworkManager.CanLog(LoggingType.Common))
-                        Debug.Log($"Accepting connection {clientSteamID}");
-                }
+                    base.Transport.NetworkManager.Log($"Accepting connection {clientSteamID}");
                 else
-                {
-                    if (base.Transport.NetworkManager.CanLog(LoggingType.Common))
-                        Debug.Log($"Connection {clientSteamID} could not be accepted: {res.ToString()}");
-                }
+                    base.Transport.NetworkManager.Log($"Connection {clientSteamID} could not be accepted: {res.ToString()}");
             }
             else if (args.m_info.m_eState == ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_Connected)
             {
@@ -267,8 +259,7 @@ namespace FishySteamworks.Server
                 _steamConnections.Add(args.m_hConn, connectionId);
                 _steamIds.Add(args.m_info.m_identityRemote.GetSteamID(), connectionId);
 
-                if (base.Transport.NetworkManager.CanLog(LoggingType.Common))
-                    Debug.Log($"Client with SteamID {clientSteamID} connected. Assigning connection id {connectionId}");
+                base.Transport.NetworkManager.Log($"Client with SteamID {clientSteamID} connected. Assigning connection id {connectionId}");
                 base.Transport.HandleRemoteConnectionState(new RemoteConnectionStateArgs(RemoteConnectionState.Started, connectionId, Transport.Index));
             }
             else if (args.m_info.m_eState == ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_ClosedByPeer || args.m_info.m_eState == ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_ProblemDetectedLocally)
@@ -280,8 +271,7 @@ namespace FishySteamworks.Server
             }
             else
             {
-                if (base.Transport.NetworkManager.CanLog(LoggingType.Common))
-                    Debug.Log($"Connection {clientSteamID} state changed: {args.m_info.m_eState.ToString()}");
+                base.Transport.NetworkManager.Log($"Connection {clientSteamID} state changed: {args.m_info.m_eState.ToString()}");
             }
         }
 
@@ -372,20 +362,17 @@ namespace FishySteamworks.Server
 
                 if (res == EResult.k_EResultNoConnection || res == EResult.k_EResultInvalidParam)
                 {
-                    if (base.Transport.NetworkManager.CanLog(LoggingType.Common))
-                        Debug.Log($"Connection to {connectionId} was lost.");
+                    base.Transport.NetworkManager.Log($"Connection to {connectionId} was lost.");
                     StopConnection(connectionId, steamConn);
                 }
                 else if (res != EResult.k_EResultOK)
                 {
-                    if (base.Transport.NetworkManager.CanLog(LoggingType.Error))
-                        Debug.LogError($"Could not send: {res.ToString()}");
+                    base.Transport.NetworkManager.LogError($"Could not send: {res.ToString()}");
                 }
             }
             else
             {
-                if (base.Transport.NetworkManager.CanLog(LoggingType.Error))
-                    Debug.LogError($"ConnectionId {connectionId} does not exist, data will not be sent.");
+                base.Transport.NetworkManager.LogError($"ConnectionId {connectionId} does not exist, data will not be sent.");
             }
         }
 
@@ -402,8 +389,7 @@ namespace FishySteamworks.Server
             }
             else
             {
-                if (base.Transport.NetworkManager.CanLog(LoggingType.Error))
-                    Debug.LogError($"ConnectionId {connectionId} is invalid; address cannot be returned.");
+                base.Transport.NetworkManager.LogError($"ConnectionId {connectionId} is invalid; address cannot be returned.");
                 return string.Empty;
             }
         }

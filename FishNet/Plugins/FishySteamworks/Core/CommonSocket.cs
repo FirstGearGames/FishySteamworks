@@ -1,4 +1,5 @@
 #if !FISHYSTEAMWORKS
+using FishNet.Managing;
 using FishNet.Managing.Logging;
 using FishNet.Transporting;
 using FishNet.Utility.Performance;
@@ -99,8 +100,7 @@ namespace FishySteamworks
             {
                 if (!IPAddress.TryParse(address, out IPAddress result))
                 {
-                    if (Transport.NetworkManager.CanLog(LoggingType.Error))
-                        Debug.LogError($"Could not parse address {address} to IPAddress.");
+                    Transport.NetworkManager.LogError($"Could not parse address {address} to IPAddress.");
                     return null;
                 }
                 else
@@ -153,10 +153,7 @@ namespace FishySteamworks
             EResult result = SteamNetworkingSockets.SendMessageToConnection(steamConnection, pData, (uint)segment.Count, sendFlag, out long _);
 #endif
             if (result != EResult.k_EResultOK)
-            {
-                if (Transport.NetworkManager.CanLog(LoggingType.Warning))
-                    Debug.LogWarning($"Send issue: {result}");
-            }
+                Transport.NetworkManager.LogWarning($"Send issue: {result}");
 
             pinnedArray.Free();
             return result;

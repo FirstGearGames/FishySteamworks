@@ -1,3 +1,6 @@
+4.1.0
+	- Fish-Networking 4.1.0 support.
+
 4.0.0	
 	- Fish-Networking 4.0.0 support.
 	- Added check to prevent Shutdown from calling multiple times without a prior initialization.

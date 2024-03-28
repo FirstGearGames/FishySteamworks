@@ -23,12 +23,10 @@ These projects need to be installed and working before you can use this transpor
 
 1. Add FishySteamworks component to your NetworkManager object. Either remove other transports or add TransportManager and specify which transport to use.
 
-2. Enter your Steam App Id in the added FishySteamworks component. For testing you may use 480 (Space Wars) as the App Id.
+2. Choose Peer to Peer to connect using the Steam relay.
 
-3. Choose Peer to Peer to connect using the Steam relay.
-
-4. You may need to add SteamManager to your NetworkManager object. Some frameworks such as Heathen Engineerings' use their own version of SteamManager. Please consult their discord here https://discord.gg/SGd4vkRdSe for more information on using their assets.
-If you need a SteamManager to get started import FishNet\Plugins\FishySteamworks\SteamManager.unitypackage.
+3. Set your AppId. You may need to add SteamManager to your NetworkManager object; if you need a SteamManager to get started import FishNet\Plugins\FishySteamworks\SteamManager.unitypackage.
+Some frameworks such as Heathen Engineerings' use their own version of SteamManager. Please consult their discord here https://discord.gg/SGd4vkRdSe for more information on using their assets.
 
 
 

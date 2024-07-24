@@ -101,6 +101,8 @@ namespace FishySteamworks.Server
                 base.PeerToPeer = peerToPeer;
                 SetMaximumClients(maximumClients);
                 _nextConnectionId = 0;
+                _steamConnections.Clear();
+                _steamIds.Clear();
                 _cachedConnectionIds.Clear();
 
                 base.SetLocalConnectionState(LocalConnectionState.Starting, true);

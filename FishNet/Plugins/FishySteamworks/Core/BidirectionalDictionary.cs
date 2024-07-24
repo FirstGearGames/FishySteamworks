@@ -20,10 +20,7 @@ namespace FishySteamworks
 
         public void Add(T1 key, T2 value)
         {
-            if (t1ToT2Dict.ContainsKey(key))
-            {
-                Remove(key);
-            }
+            Remove(key);
 
             t1ToT2Dict[key] = value;
             t2ToT1Dict[value] = key;
@@ -31,10 +28,7 @@ namespace FishySteamworks
 
         public void Add(T2 key, T1 value)
         {
-            if (t2ToT1Dict.ContainsKey(key))
-            {
-                Remove(key);
-            }
+            Remove(key);
 
             t2ToT1Dict[key] = value;
             t1ToT2Dict[value] = key;
@@ -54,20 +48,16 @@ namespace FishySteamworks
 
         public void Remove(T1 key)
         {
-            if (Contains(key))
+            if (t1ToT2Dict.Remove(key, out T2 val))
             {
-                T2 val = t1ToT2Dict[key];
-                t1ToT2Dict.Remove(key);
                 t2ToT1Dict.Remove(val);
             }
         }
         public void Remove(T2 key)
         {
-            if (Contains(key))
+            if (t2ToT1Dict.Remove(key, out T1 val))
             {
-                T1 val = t2ToT1Dict[key];
                 t1ToT2Dict.Remove(val);
-                t2ToT1Dict.Remove(key);
             }
         }
 

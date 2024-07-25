@@ -133,8 +133,16 @@ namespace FishySteamworks.Server
                 return false;
             }
 
-            base.SetLocalConnectionState(LocalConnectionState.Started, true);
-            return true;
+            if (_socket == HSteamListenSocket.Invalid)
+            {
+                base.SetLocalConnectionState(LocalConnectionState.Stopped, true);
+                return false;
+            }
+            else
+            {
+                base.SetLocalConnectionState(LocalConnectionState.Started, true);
+                return true;
+            }
         }
 
 

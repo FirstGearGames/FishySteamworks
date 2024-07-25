@@ -21,7 +21,7 @@ namespace FishySteamworks.Server
         internal RemoteConnectionState GetConnectionState(int connectionId)
         {
             //Remote clients can only have Started or Stopped states since we cannot know in between.
-            if (_steamConnections.Second.ContainsKey(connectionId))
+            if (_steamConnections.Contains(connectionId))
                 return RemoteConnectionState.Started;
             else
                 return RemoteConnectionState.Stopped;
@@ -101,6 +101,10 @@ namespace FishySteamworks.Server
                 base.PeerToPeer = peerToPeer;
                 SetMaximumClients(maximumClients);
                 _nextConnectionId = 0;
+
+                _steamConnections.Clear();
+                _steamIds.Clear();
+
                 _cachedConnectionIds.Clear();
 
                 base.SetLocalConnectionState(LocalConnectionState.Starting, true);
@@ -191,7 +195,7 @@ namespace FishySteamworks.Server
             //Remote client.
             else
             {
-                if (_steamConnections.Second.TryGetValue(connectionId, out HSteamNetConnection steamConn))
+                if (_steamConnections.TryGetValue(connectionId, out HSteamNetConnection steamConn))
                 {
                     return StopConnection(connectionId, steamConn);
                 }
@@ -284,12 +288,12 @@ namespace FishySteamworks.Server
             if (base.GetLocalConnectionState() != LocalConnectionState.Started)
                 return;
 
-            foreach (HSteamNetConnection conn in _steamConnections.FirstTypes)
+            foreach (KeyValuePair<HSteamNetConnection, int> item in _steamConnections)
             {
 #if UNITY_SERVER
-                SteamGameServerNetworkingSockets.FlushMessagesOnConnection(conn);
+                SteamGameServerNetworkingSockets.FlushMessagesOnConnection(item.Key);
 #else
-                SteamNetworkingSockets.FlushMessagesOnConnection(conn);
+                SteamNetworkingSockets.FlushMessagesOnConnection(item.Key);
 #endif
             }
         }
@@ -312,7 +316,7 @@ namespace FishySteamworks.Server
                 base.Transport.HandleServerReceivedDataArgs(new ServerReceivedDataArgs(segment, (Channel)packet.Channel, FishySteamworks.CLIENT_HOST_ID, Transport.Index));
             }
 
-            foreach (KeyValuePair<HSteamNetConnection, int> item in _steamConnections.First)
+            foreach (KeyValuePair<HSteamNetConnection, int> item in _steamConnections)
             {
                 HSteamNetConnection steamNetConn = item.Key;
                 int connectionId = item.Value;

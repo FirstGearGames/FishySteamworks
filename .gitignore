@@ -1,0 +1,6 @@
+!*SteamManager.unitypackage
+!/Assets/FishNet/Plugins/FishySteamworks/
+!/Assets/FishNet/Plugins/FishySteamworks/package.json
+*/
+*.meta
+/Assets/DefaultPrefabObject.asset

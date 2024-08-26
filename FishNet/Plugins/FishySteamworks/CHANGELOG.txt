@@ -1,3 +1,8 @@
+4.1.1
+    - Added check for server connection start failure (#14).
+    - Fixed collection modified error on server (#13).
+    - Added package.json file (#11).
+    
 4.1.0
 	- Fish-Networking 4.1.0 support.
 

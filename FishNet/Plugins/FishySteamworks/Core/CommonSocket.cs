@@ -129,19 +129,14 @@ namespace FishySteamworks
              * the channel has to be packed into the data sent.
              * Odds of the array having to resize are extremely low
              * so while this is not ideal, it's still very low risk. */
-            if ((segment.Array.Length - 1) <= (segment.Offset + segment.Count))
-            {
-                byte[] arr = segment.Array;
-                Array.Resize(ref arr, arr.Length + 1);
-                arr[arr.Length - 1] = channelId;
-            }
-            //If large enough just increase the segment and set the channel byte.
-            else
-            {
-                segment.Array[segment.Offset + segment.Count] = channelId;
-            }
+            //Resize only when no byte is free after the segment, and send the resized array (see #19).
+            byte[] array = segment.Array;
+            int end = segment.Offset + segment.Count;
+            if (end >= array.Length)
+                Array.Resize(ref array, end + 1);
+            array[end] = channelId;
             //Make a new segment so count is right.
-            segment = new ArraySegment<byte>(segment.Array, segment.Offset, segment.Count + 1);
+            segment = new ArraySegment<byte>(array, segment.Offset, segment.Count + 1);
 
             GCHandle pinnedArray = GCHandle.Alloc(segment.Array, GCHandleType.Pinned);
             IntPtr pData = pinnedArray.AddrOfPinnedObject() + segment.Offset;
@@ -187,19 +182,35 @@ namespace FishySteamworks
         /// <param name="ptr"></param>
         /// <param name="buffer"></param>
         /// <returns></returns>
-        protected void GetMessage(IntPtr ptr, byte[] buffer, out ArraySegment<byte> segment, out byte channel)
+        /// <returns>False if the message is malformed and must be skipped.</returns>
+        protected bool GetMessage(IntPtr ptr, byte[] buffer, out ArraySegment<byte> segment, out byte channel)
         {
-            SteamNetworkingMessage_t data = Marshal.PtrToStructure<SteamNetworkingMessage_t>(ptr);
+            segment = default;
+            channel = 0;
+            //Always release the message, even when it is malformed.
+            try
+            {
+                SteamNetworkingMessage_t data = Marshal.PtrToStructure<SteamNetworkingMessage_t>(ptr);
 
-            int packetLength = data.m_cbSize;
-            Marshal.Copy(data.m_pData, buffer, 0, packetLength);
+                int packetLength = data.m_cbSize;
+                //Must hold at least the trailing channel byte and fit the inbound buffer.
+                if (packetLength < 1 || packetLength > buffer.Length)
+                    return false;
 
-            //data.Release();
-            SteamNetworkingMessage_t.Release(ptr);
-            //Channel will be at the end of the packet.
-            channel = buffer[packetLength - 1];
-            //Set segment to length - 1 to exclude channel.
-            segment = new ArraySegment<byte>(buffer, 0, packetLength - 1);
+                Marshal.Copy(data.m_pData, buffer, 0, packetLength);
+                //Channel will be at the end of the packet.
+                channel = buffer[packetLength - 1];
+                if (channel != (byte)Channel.Reliable && channel != (byte)Channel.Unreliable)
+                    return false;
+
+                //Set segment to length - 1 to exclude channel.
+                segment = new ArraySegment<byte>(buffer, 0, packetLength - 1);
+                return true;
+            }
+            finally
+            {
+                SteamNetworkingMessage_t.Release(ptr);
+            }
         }
     }
 

@@ -327,7 +327,8 @@ namespace FishySteamworks
         /// <returns></returns>
         public override int GetMaximumClients()
         {
-            return _server.GetMaximumClients();
+            //Safe before Initialize.
+            return _server != null ? _server.GetMaximumClients() : _maximumClients;
         }
         /// <summary>
         /// Sets maximum number of clients allowed to connect to the server. If applied at runtime and clients exceed this value existing clients will stay connected but new clients may not connect.
@@ -335,7 +336,10 @@ namespace FishySteamworks
         /// <param name="value"></param>
         public override void SetMaximumClients(int value)
         {
-            _server.SetMaximumClients(value);
+            //Keep the value for the next StartConnection, which otherwise passes the serialized default,
+            //and allow calls before Initialize, when _server does not exist yet.
+            _maximumClients = (ushort)Math.Clamp(value, 0, ushort.MaxValue);
+            _server?.SetMaximumClients(value);
         }
         /// <summary>
         /// Sets which address the client will connect to.

@@ -305,6 +305,18 @@ namespace FishySteamworks.Server
             }
             else if (args.m_info.m_eState == ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_Connected)
             {
+                //Several handshakes can be accepted while under the limit; enforce it again once they complete.
+                if (_steamConnections.Count + CountPendingAdditions() >= GetMaximumClients())
+                {
+                    base.Transport.NetworkManager.Log($"Connection {clientSteamID} was closed because it would exceed the maximum connection count.");
+#if UNITY_SERVER
+                    SteamGameServerNetworkingSockets.CloseConnection(args.m_hConn, 0, "Max Connection Count", false);
+#else
+                    SteamNetworkingSockets.CloseConnection(args.m_hConn, 0, "Max Connection Count", false);
+#endif
+                    return;
+                }
+
                 int connectionId = (_cachedConnectionIds.Count > 0) ? _cachedConnectionIds.Dequeue() : _nextConnectionId++;
                 if (!_iteratingConnections)
                     AddConnection(connectionId, args.m_hConn, args.m_info.m_identityRemote.GetSteamID());
@@ -329,6 +341,19 @@ namespace FishySteamworks.Server
         /// </summary>
         private void AddConnection(int connectionId, HSteamNetConnection steamConnection, CSteamID steamId)
         {
+            //Never map one SteamID or connection id twice (e.g. a reconnect racing the old connection's removal).
+            if (_steamIds.Contains(steamId) || _steamConnections.Contains(connectionId))
+            {
+#if UNITY_SERVER
+                SteamGameServerNetworkingSockets.CloseConnection(steamConnection, 0, "Duplicate connection", false);
+#else
+                SteamNetworkingSockets.CloseConnection(steamConnection, 0, "Duplicate connection", false);
+#endif
+                if (!_steamConnections.Contains(connectionId))
+                    _cachedConnectionIds.Enqueue(connectionId);
+                return;
+            }
+
             _steamConnections.Add(steamConnection, connectionId);
             _steamIds.Add(steamId, connectionId);
             base.Transport.NetworkManager.Log($"Client with SteamID {steamId.m_SteamID} connected. Assigning connection id {connectionId}");
@@ -340,6 +365,11 @@ namespace FishySteamworks.Server
         /// </summary>
         private void RemoveConnection(int connectionId)
         {
+            //A connection can be queued for removal twice (stopped while iterating, then closed by the peer).
+            //Remove it and recycle its id only once, otherwise two clients could share an id.
+            if (!_steamConnections.Contains(connectionId))
+                return;
+
             _steamConnections.Remove(connectionId);
             _steamIds.Remove(connectionId);
 
@@ -406,8 +436,8 @@ namespace FishySteamworks.Server
                 {
                     for (int i = 0; i < messageCount; i++)
                     {
-                        base.GetMessage(base.MessagePointers[i], InboundBuffer, out ArraySegment<byte> segment, out byte channel);
-                        base.Transport.HandleServerReceivedDataArgs(new ServerReceivedDataArgs(segment, (Channel)channel, connectionId, Transport.Index));
+                        if (base.GetMessage(base.MessagePointers[i], InboundBuffer, out ArraySegment<byte> segment, out byte channel))
+                            base.Transport.HandleServerReceivedDataArgs(new ServerReceivedDataArgs(segment, (Channel)channel, connectionId, Transport.Index));
                     }
                 }
             }
@@ -415,6 +445,21 @@ namespace FishySteamworks.Server
             _iteratingConnections = false;
 
             ProcessPendingConnectionChanges();
+        }
+
+        /// <summary>
+        /// Number of connections that completed but are not added yet (queued while iterating).
+        /// </summary>
+        private int CountPendingAdditions()
+        {
+            int count = 0;
+            foreach (ConnectionChange cc in _pendingConnectionChanges)
+            {
+                if (cc.IsConnect)
+                    count++;
+            }
+
+            return count;
         }
 
         /// <summary>
